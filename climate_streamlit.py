@@ -29,13 +29,13 @@ def monthNumbers(month,month_names):
     return [i for i, x in enumerate(month_names) if x==month][0]
 
 # selection station location
-station_list = ['DFWthr','SJCthr']
+station_list = ['Dallas/Fort Worth, TX','San Jose, CA']
 station_dict = {
-    'DFWthr':'Dallas/Fort Worth, TX',
-    'SJCthr':'San Jose, CA'
+    'Dallas/Fort Worth, TX':'DFWthr',
+    'San Jose, CA':'SJCthr'
     }
-station = st.radio('Select Station: ',station_list)
-station_name = station_dict[station]
+station_name = st.radio('Select Station: ',station_list)
+station = station_dict[station_name]
     
 # Create a text element and let the reader know the data is loading.
 data_load_state = st.text('Loading data...')
