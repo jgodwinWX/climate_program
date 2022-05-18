@@ -29,9 +29,13 @@ def monthNumbers(month,month_names):
     return [i for i, x in enumerate(month_names) if x==month][0]
 
 # selection station location
-station_list = ['Dallas/Fort Worth, TX','San Jose, CA']
+station_list = [
+    'Baton Rouge, LA','Dallas/Fort Worth, TX','Fairbanks, AK','San Jose, CA'
+    ]
 station_dict = {
+    'Baton Rouge, LA':'BTRthr',
     'Dallas/Fort Worth, TX':'DFWthr',
+    'Fairbanks, AK':'FAIthr',
     'San Jose, CA':'SJCthr'
     }
 station_name = st.radio('Select Station: ',station_list)
