@@ -13,6 +13,7 @@ from dateutil.relativedelta import relativedelta
 station='DFWthr'
 station_name = 'Dallas/Fort Worth, TX'
 
+st.set_page_config(layout='wide')
 st.title('Daily Temperature and Precipitation Data for %s' % station_name)
 
 # function for loading data
