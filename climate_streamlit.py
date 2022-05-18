@@ -10,11 +10,8 @@ from plotly.subplots import make_subplots
 from dateutil.relativedelta import relativedelta
 
 # data settings
-station='DFWthr'
-station_name = 'Dallas/Fort Worth, TX'
-
 st.set_page_config(layout='wide')
-st.title('Daily Temperature and Precipitation Data for %s' % station_name)
+st.title('Daily Temperature and Precipitation Data Browser')
 
 # function for loading data
 @st.cache         
@@ -30,6 +27,15 @@ def load_data(station):
     
 def monthNumbers(month,month_names):
     return [i for i, x in enumerate(month_names) if x==month][0]
+
+# selection station location
+station_list = ['DFWthr','SJCthr']
+station_dict = {
+    'DFWthr':'Dallas/Fort Worth, TX',
+    'SJCthr':'San Jose, CA'
+    }
+station = st.radio('Select Station: ',station_list)
+station_name = station_dict[station]
     
 # Create a text element and let the reader know the data is loading.
 data_load_state = st.text('Loading data...')
