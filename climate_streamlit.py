@@ -2,9 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import datetime
-import urllib,urllib3
-import requests
-import json
 
 from plotly.subplots import make_subplots
 from dateutil.relativedelta import relativedelta
