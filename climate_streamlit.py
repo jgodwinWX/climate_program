@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import plotly.express as px
-import plotly.io as pio
 import plotly.graph_objects as go
 import datetime
+import urllib,urllib3
+import requests
+import json
 
 from plotly.subplots import make_subplots
 from dateutil.relativedelta import relativedelta
@@ -14,13 +14,11 @@ st.set_page_config(layout='wide')
 st.title('Daily Temperature and Precipitation Data Browser')
 
 # function for loading data
-@st.cache         
-def load_data(station):
+@st.cache
+def load_data(station,request_type):
     column_names = ['Date','MaxT','MinT','Precip','Snow','SnowDepth']
-    data = pd.read_csv('http://data.rcc-acis.org/StnData?sid=%s&sdate=por&edate=por&elems=1,2,4,10,11&output=csv' % station,
-        skiprows=1,names=['Date','MaxT','MinT','Precip','Snow','SnowDepth'])
+    data = pd.read_csv('http://data.rcc-acis.org/StnData?sid=%s&sdate=por&edate=por&elems=1,2,4,10,11&output=csv' % station,skiprows=1,names=['Date','MaxT','MinT','Precip','Snow','SnowDepth'])
     data['Date'] = pd.to_datetime(data['Date'],format='%Y-%m-%d')
-    
     for x in column_names[1:]:
         data[x] = pd.to_numeric(data[x], errors='coerce')
     return data
@@ -44,7 +42,7 @@ station = station_dict[station_name]
 # Create a text element and let the reader know the data is loading.
 data_load_state = st.text('Loading data...')
 # Load the climate data
-data_all = load_data(station)
+data_all = load_data(station,'observed')
 # Notify the reader that the data was successfully loaded.
 data_load_state.text("Done! (using streamlit.cache)")
 
@@ -79,7 +77,7 @@ if st.checkbox('Precipitation'):
     fig.add_trace(go.Bar(x=data['Date'],y=data['Precip'],marker=dict(color="green"),name='Precipitation'),secondary_y=True)
 if st.checkbox('Snowfall'):
     fig.add_trace(go.Bar(x=data['Date'],y=data['Snow'],marker=dict(color="purple"),name='Snow'),secondary_y=True)
-
+    
 # plot aesthetics
 fig.update_layout(
     title = '%s Daily Temperatures and Precipitation for %s %d' % (station_name,month,year),
