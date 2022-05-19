@@ -144,6 +144,7 @@ if st.checkbox('Precipitation'):
     fig.add_trace(go.Bar(
         x=data['Day'],
         y=data['Precip'],
+        customdata=[datetime.datetime.strftime(x,'%Y-%m-%d') for x in data['Date']],
         marker=dict(color="green"),
         name='Precipitation'),
         secondary_y=True)
@@ -152,6 +153,7 @@ if st.checkbox('Snowfall'):
     fig.add_trace(go.Bar(
         x=data['Day'],
         y=data['Snow'],
+        customdata=[datetime.datetime.strftime(x,'%Y-%m-%d') for x in data['Date']],
         marker=dict(color="purple"),
         name='Snow'),
         secondary_y=True)
