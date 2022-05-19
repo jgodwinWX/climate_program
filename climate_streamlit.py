@@ -1,3 +1,4 @@
+import calendar
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
@@ -5,6 +6,8 @@ import datetime
 
 from plotly.subplots import make_subplots
 from dateutil.relativedelta import relativedelta
+
+from records_request import recordDfBuilder,recordRequester
 
 # data settings
 st.set_page_config(layout='wide')
@@ -40,8 +43,39 @@ station = station_dict[station_name]
 data_load_state = st.text('Loading data...')
 # Load the climate data
 data_all = load_data(station,'observed')
+
 # Notify the reader that the data was successfully loaded.
 data_load_state.text("Done! (using streamlit.cache)")
+
+# get the daily records
+r,record_status_code = recordRequester(station)
+record_high_max = r.json()['smry'][0]
+record_low_min = r.json()['smry'][1]
+record_pcpn = r.json()['smry'][2]
+record_snow = r.json()['smry'][3]
+record_low_max = r.json()['smry'][4]
+record_high_min = r.json()['smry'][5]
+
+record_high_maxt_df = recordDfBuilder(record_high_max,'HighMaxT')   # Record high daily maximums
+record_low_mint_df = recordDfBuilder(record_low_min,'LowMinT')      # Record low daily minimums
+record_pcpn_df = recordDfBuilder(record_pcpn,'HighPCPN')            # Record high daily precipitation
+record_snow_df = recordDfBuilder(record_snow,'HighSnow')            # Record high daily snow
+record_low_maxt_df = recordDfBuilder(record_low_max,'LowMaxT')      # Record low daily maximums ("coldest highs")
+record_high_mint_df = recordDfBuilder(record_high_min,'HighMinT')   # Record low daily maximums ("coldest highs")
+
+# do a bunch of merging to make one master daily records dateframe
+record_list = [record_high_maxt_df,record_low_mint_df,record_pcpn_df,record_snow_df,record_low_maxt_df,record_high_mint_df]
+for ix,x in enumerate(record_list):
+    if ix == 0:
+        records = record_high_maxt_df.merge(record_low_mint_df,left_index=True,right_index=True)
+    elif ix < len(record_list)-1:
+        records = records.merge(record_list[ix+1],left_index=True,right_index=True)
+    else:
+        records = records.drop(labels=['Date_x','Month_x','Day_x','Date_y','Month_y','Day_y'],axis=1)
+        records['Month'] = records.index.get_level_values(0).str[0:2]
+        records['Day'] = records.index.get_level_values(0).str[3:5]
+        records['Month'] = pd.to_numeric(records['Month'], errors='coerce')
+        records['Day'] = pd.to_numeric(records['Day'], errors='coerce')
 
 # month and year selection
 month_names = ['January','February','March','April','May','June','July','August','September','October','November','December']
@@ -63,13 +97,27 @@ if st.button("Previous Month"):
 
 data = data_all[(data_all['Date'].dt.year==year)&(data_all['Date'].dt.month==month_num)]
 
+# filter down the daily records to the month we are interested in
+records_filtered = records[records['Month']==month_num]
+# in order to "trick" plotly into plotting the daily record values, we create a fake date
+# we also have to figure out how to handle leap year since Feb. 29, 2022 doesn't exist
+if month_num != 2 or calendar.isleap(year):
+    records_filtered['Fake Date Str'] = ['%d-%02d-%02d' % (year,month_num,x) for x in records_filtered['Day']]
+    records_filtered['Fake Date'] = [datetime.datetime.strptime(x,'%Y-%m-%d') for x in records_filtered['Fake Date Str']]
+else:
+    records_filtered = records_filtered[records_filtered['Day']<29]
+    records_filtered['Fake Date Str'] = ['%d-%02d-%02d' % (year,month_num,x) for x in records_filtered['Day']]
+    records_filtered['Fake Date'] = [datetime.datetime.strptime(x,'%Y-%m-%d') for x in records_filtered['Fake Date Str']]
+
 # create figures based on user options
 st.write('Select fields:')
 fig = make_subplots(specs=[[{"secondary_y": True}]])
 if st.checkbox('Maximum Temperatures'):
-    fig.add_trace(go.Line(x=data['Date'],y=data['MaxT'],mode='lines+markers',line=dict(color="red"),name='High Temperature'),secondary_y=False)
+    fig.add_trace(go.Line(x=data['Date'],y=data['MaxT'],mode='lines+markers',line=dict(color="red",width=3),name='Observed High Temperature'),secondary_y=False)
+    fig.add_trace(go.Line(x=records_filtered['Fake Date'],y=records_filtered['HighMaxT'],mode='lines',line=dict(color="red",width=1),name='Record High Temperature'),secondary_y=False)
 if st.checkbox('Minimum Temperatures'):
-    fig.add_trace(go.Line(x=data['Date'],y=data['MinT'],mode='lines+markers',line=dict(color="blue"),name='Low Temperature'),secondary_y=False)
+    fig.add_trace(go.Line(x=data['Date'],y=data['MinT'],mode='lines+markers',line=dict(color="blue",width=3),name='Observed Low Temperature'),secondary_y=False)
+    fig.add_trace(go.Line(x=records_filtered['Fake Date'],y=records_filtered['LowMinT'],mode='lines',line=dict(color="blue",width=1),name='Record Low Temperature'),secondary_y=False)
 if st.checkbox('Precipitation'):
     fig.add_trace(go.Bar(x=data['Date'],y=data['Precip'],marker=dict(color="green"),name='Precipitation'),secondary_y=True)
 if st.checkbox('Snowfall'):
@@ -94,5 +142,8 @@ st.plotly_chart(fig,use_container_width=True)
 
 # monthly summary
 
-st.subheader('Raw data')
+st.subheader('Daily Observed Values for %s %s' % (month,year))
 st.write(data)
+st.subheader('Record Values for the month of %s' % month)
+
+st.write(records_filtered.drop(labels=['Month','Day','Fake Date Str','Fake Date'],axis=1))
