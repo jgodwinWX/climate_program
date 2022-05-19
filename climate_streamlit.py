@@ -108,6 +108,7 @@ if st.checkbox('Maximum Temperatures'):
     fig.add_trace(go.Line(
         x=data['Day'],
         y=data['MaxT'],
+        customdata=[datetime.datetime.strftime(x,'%Y-%m-%d') for x in data['Date']],
         mode='lines+markers',
         line=dict(color="red",width=3),
         name='Observed High Temperature'),
@@ -115,6 +116,7 @@ if st.checkbox('Maximum Temperatures'):
     fig.add_trace(go.Line(
         x=records_filtered['Day'],
         y=records_filtered['HighMaxT'],
+        customdata=records_filtered['Year_HighMaxT'],
         mode='lines',
         line=dict(color="red",width=1),
         name='Record High Temperature',xaxis='x2'),
@@ -125,6 +127,7 @@ if st.checkbox('Minimum Temperatures'):
     fig.add_trace(go.Line(
         x=data['Day'],
         y=data['MinT'],
+        customdata=[datetime.datetime.strftime(x,'%Y-%m-%d') for x in data['Date']],
         mode='lines+markers',
         line=dict(color="blue",width=3),
         name='Observed Low Temperature'),
@@ -132,6 +135,7 @@ if st.checkbox('Minimum Temperatures'):
     fig.add_trace(go.Line(
         x=records_filtered['Day'],
         y=records_filtered['LowMinT'],
+        customdata=records_filtered['Year_LowMinT'],
         mode='lines',line=dict(color="blue",width=1),
         name='Record Low Temperature'),
         secondary_y=False)
@@ -165,6 +169,12 @@ fig.update_yaxes(
     title_text='Precipitation (in)',
     range = [0,10],
     secondary_y=True
+    )
+fig.update_traces(
+    hovertemplate="<br>".join([
+        'Date: %{customdata}',
+        'Temperature: %{y}'
+        ])
     )
 
 st.plotly_chart(fig,use_container_width=True)
