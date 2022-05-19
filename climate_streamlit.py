@@ -185,4 +185,4 @@ st.subheader('Daily Observed Values for %s %s' % (month,year))
 st.write(data)
 st.subheader('Record Values for the month of %s' % month)
 
-st.write(records_filtered.drop(labels=['Month','Day','Fake Date Str','Fake Date'],axis=1))
+st.write(records_filtered.drop(labels=['Month','Day'],axis=1))
