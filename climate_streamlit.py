@@ -96,37 +96,66 @@ if st.button("Previous Month"):
     year = previous_month_date.year
 
 data = data_all[(data_all['Date'].dt.year==year)&(data_all['Date'].dt.month==month_num)]
+data['Day'] = [x.day for x in data['Date']]
 
 # filter down the daily records to the month we are interested in
 records_filtered = records[records['Month']==month_num]
-# in order to "trick" plotly into plotting the daily record values, we create a fake date
-# we also have to figure out how to handle leap year since Feb. 29, 2022 doesn't exist
-if month_num != 2 or calendar.isleap(year):
-    records_filtered['Fake Date Str'] = ['%d-%02d-%02d' % (year,month_num,x) for x in records_filtered['Day']]
-    records_filtered['Fake Date'] = [datetime.datetime.strptime(x,'%Y-%m-%d') for x in records_filtered['Fake Date Str']]
-else:
-    records_filtered = records_filtered[records_filtered['Day']<29]
-    records_filtered['Fake Date Str'] = ['%d-%02d-%02d' % (year,month_num,x) for x in records_filtered['Day']]
-    records_filtered['Fake Date'] = [datetime.datetime.strptime(x,'%Y-%m-%d') for x in records_filtered['Fake Date Str']]
 
 # create figures based on user options
 st.write('Select fields:')
 fig = make_subplots(specs=[[{"secondary_y": True}]])
 if st.checkbox('Maximum Temperatures'):
-    fig.add_trace(go.Line(x=data['Date'],y=data['MaxT'],mode='lines+markers',line=dict(color="red",width=3),name='Observed High Temperature'),secondary_y=False)
-    fig.add_trace(go.Line(x=records_filtered['Fake Date'],y=records_filtered['HighMaxT'],mode='lines',line=dict(color="red",width=1),name='Record High Temperature'),secondary_y=False)
+    fig.add_trace(go.Line(
+        x=data['Day'],
+        y=data['MaxT'],
+        mode='lines+markers',
+        line=dict(color="red",width=3),
+        name='Observed High Temperature'),
+        secondary_y=False)
+    fig.add_trace(go.Line(
+        x=records_filtered['Day'],
+        y=records_filtered['HighMaxT'],
+        mode='lines',
+        line=dict(color="red",width=1),
+        name='Record High Temperature',xaxis='x2'),
+        secondary_y=False
+        )
+
 if st.checkbox('Minimum Temperatures'):
-    fig.add_trace(go.Line(x=data['Date'],y=data['MinT'],mode='lines+markers',line=dict(color="blue",width=3),name='Observed Low Temperature'),secondary_y=False)
-    fig.add_trace(go.Line(x=records_filtered['Fake Date'],y=records_filtered['LowMinT'],mode='lines',line=dict(color="blue",width=1),name='Record Low Temperature'),secondary_y=False)
+    fig.add_trace(go.Line(
+        x=data['Day'],
+        y=data['MinT'],
+        mode='lines+markers',
+        line=dict(color="blue",width=3),
+        name='Observed Low Temperature'),
+        secondary_y=False)
+    fig.add_trace(go.Line(
+        x=records_filtered['Day'],
+        y=records_filtered['LowMinT'],
+        mode='lines',line=dict(color="blue",width=1),
+        name='Record Low Temperature'),
+        secondary_y=False)
+    
 if st.checkbox('Precipitation'):
-    fig.add_trace(go.Bar(x=data['Date'],y=data['Precip'],marker=dict(color="green"),name='Precipitation'),secondary_y=True)
+    fig.add_trace(go.Bar(
+        x=data['Day'],
+        y=data['Precip'],
+        marker=dict(color="green"),
+        name='Precipitation'),
+        secondary_y=True)
+    
 if st.checkbox('Snowfall'):
-    fig.add_trace(go.Bar(x=data['Date'],y=data['Snow'],marker=dict(color="purple"),name='Snow'),secondary_y=True)
+    fig.add_trace(go.Bar(
+        x=data['Day'],
+        y=data['Snow'],
+        marker=dict(color="purple"),
+        name='Snow'),
+        secondary_y=True)
     
 # plot aesthetics
 fig.update_layout(
     title = '%s Daily Temperatures and Precipitation for %s %d' % (station_name,month,year),
-    xaxis_title = 'Date'
+    xaxis_title = 'Day of Month',
     )
 fig.update_yaxes(
     title_text='Temperature (F)',
